@@ -1,0 +1,719 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.IO;
+using System.Reflection;
+
+namespace WindowsFormsApp1
+{
+    public partial class Apoternary : Form
+    {
+        //methods that set inital values
+        #region Initialization
+        //string arrays that contain the potion solutions, ingredients, and bottles, as well as their respective descriptors
+        string[] SolutionsList = { "Carbonated Water", "Bee Honey", "Spider Venom" };
+        string[] IngredientsList = { "Leafy Clover", "Cupid Feather", "Demon Tears" };
+        string[] BottlesList = { "Little Vial", "Medium Flask", "Huge Jug" };
+
+        string[] SolutionDescriptors = { "fizzy", "sweet", "toxic" };
+        string[] IngredientDescriptors = { "luck", "love", "sadness" };
+        string[] BottleDescriptors = { "small dose", "moderate amount", "large supply" };
+
+        //integer variables that represent default values used for ComboBox choice comparison
+        int solutionNum = -1;
+        int ingredientNum = -1;
+        int bottleNum = -1;
+
+        int randomBase = -1;
+        int randomAdditive = -1;
+        int randomContainer = -1;
+
+        //integer variables that represent a score counter "money" and a lives counter "chances"
+        int money = 100000;
+        int chances = 3;
+
+        //boolean variables that represent shop items
+        bool moneyBoost = false;
+
+        //SoundPlayer objects that will be used to play sound
+        System.Media.SoundPlayer brewsound = new System.Media.SoundPlayer(Application.StartupPath + "\\Sounds\\brewsound.wav");
+        System.Media.SoundPlayer sellsound = new System.Media.SoundPlayer(Application.StartupPath + "\\Sounds\\sellsound.wav");
+        System.Media.SoundPlayer coinget = new System.Media.SoundPlayer(Application.StartupPath + "\\Sounds\\coinget.wav");
+        System.Media.SoundPlayer goldLab = new System.Media.SoundPlayer(Application.StartupPath + "\\Sounds\\goldenlabget.wav");
+        System.Media.SoundPlayer expertLicense = new System.Media.SoundPlayer(Application.StartupPath + "\\Sounds\\expertlicenseget.wav");
+        System.Media.SoundPlayer moneyBoostsound = new System.Media.SoundPlayer(Application.StartupPath + "\\Sounds\\moneyboostget.wav");
+
+        //void method to add elements from an array to a ComboBox's list of choices
+        public void AddChoices(Array array, ComboBox cb)
+        {
+            foreach(string a in array)
+            {
+                cb.Items.Add(a);
+            }
+        }
+
+        //method that randomizes 3 integers that control the customer's potion request
+        public void RandomizeRequest()
+        {
+            Random rnd = new Random();
+
+            randomBase = (int)(rnd.Next(1, 3));
+            randomAdditive = (int)(rnd.Next(1, 3));
+            randomContainer = (int)(rnd.Next(1, 3));
+        }
+
+        //method that displays the customer's potion request based on the previous method's random integers
+        public string CustomerRequest()
+        {
+            return "I would like to order a " + SolutionDescriptors[randomBase] + " potion of " + IngredientDescriptors[randomAdditive] + " in a " + BottleDescriptors[randomContainer] + ".";
+        }
+
+        public Apoternary()
+        {
+            InitializeComponent();
+
+            mnu_TopMenu.ForeColor = Color.White;
+
+            AddChoices(SolutionsList, cb_Solution);
+            AddChoices(IngredientsList, cb_Ingredient);
+            AddChoices(BottlesList, cb_Bottle);
+            RandomizeRequest();
+            Display_Request.Items.Add("");
+            Display_Request.Items.Add("");
+            Display_Request.Items.Add(CustomerRequest());
+            tb_Chances.Text = chances.ToString();
+            tb_Coins.Text = money.ToString();
+        }
+        #endregion
+
+        //methods for player actions in-game
+        #region In-Game Methods
+        //method that "brews" a potion based on the selected items in the ComboBoxes
+        private void bt_Brew_Click(object sender, EventArgs e)
+        {
+            Display_PotionOutput.Items.Clear();
+
+            //string variables that are paired with the potion descriptors listed in the string array above
+            string solutionType = "ERROR";
+            string ingredientType = "ERROR";
+            string bottleType = "ERROR";
+
+            #region comboBox Base
+            //if statements that assign a solution type and solution number based on ComboBox choice
+            if (cb_Solution.SelectedIndex == 0)
+            {
+                solutionType = "Bubbly";
+                solutionNum = 0;
+            }
+
+            if (cb_Solution.SelectedIndex == 1)
+            {
+                solutionType = "Sugary";
+                solutionNum = 1;
+            }
+
+            if (cb_Solution.SelectedIndex == 2)
+            {
+                solutionType = "Deadly";
+                solutionNum = 2;
+            }
+            #endregion
+
+            #region comboBox Additive
+            //if statements that assign an ingredient type and solution number based on ComboBox choice
+            if (cb_Ingredient.SelectedIndex == 0)
+            {
+                ingredientType = "Fortune";
+                ingredientNum = 0;
+            }
+
+            if (cb_Ingredient.SelectedIndex == 1)
+            {
+                ingredientType = "Passion";
+                ingredientNum = 1;
+            }
+
+            if (cb_Ingredient.SelectedIndex == 2)
+            {
+                ingredientType = "Despair";
+                ingredientNum = 2;
+            }
+            #endregion
+
+            #region comboBox Container
+            //if statements that assign a bottle type and solution number based on ComboBox choice
+            if (cb_Bottle.SelectedIndex == 0)
+            {
+                bottleType = "Little";
+                bottleNum = 0;
+            }
+
+            if (cb_Bottle.SelectedIndex == 1)
+            {
+                bottleType = "Medium";
+                bottleNum = 1;
+            }
+
+            if (cb_Bottle.SelectedIndex == 2)
+            {
+                bottleType = "Big";
+                bottleNum = 2;
+            }
+            #endregion
+
+            if(solutionType == "ERROR" || ingredientType ==  "ERROR" || bottleType == "ERROR")
+            {
+                MessageBox.Show("You must select a solution, ingredient, and bottle to brew a potion!");
+                return;
+            }
+
+            Display_PotionOutput.Items.Add("    You brewed a " + bottleType + " " + solutionType);
+            Display_PotionOutput.Items.Add("        potion of " + ingredientType);
+            brewsound.Play();
+            DisplayPotionOutput();
+        }
+
+        //method that increases your money or decreases your chances based on correct or incorrect potion sold
+        private void bt_Sell_Click(object sender, EventArgs e)
+        {
+
+            if (cb_Solution.SelectedIndex == -1 || cb_Ingredient.SelectedIndex == -1 || cb_Bottle.SelectedIndex == -1)
+            {
+                MessageBox.Show("You haven't brewed a potion yet!");
+                return;
+            }
+            else if (randomBase == solutionNum)
+            {
+                if (randomAdditive == ingredientNum)
+                {
+                    if (randomContainer == bottleNum)
+                    {
+                        if (moneyBoost == false)
+                        {
+                            money += 500;
+                            sellsound.Play();
+                            tb_Coins.Text = money.ToString();
+                            MessageBox.Show("You sold the correct potion! You gained 500 coins. \r\nHit the \"Next Customer\" button to recieve the next order.");
+                            Display_PotionOutput.Items.Clear();
+
+                            cb_Solution.Enabled = false;
+                            cb_Ingredient.Enabled = false;
+                            cb_Bottle.Enabled = false;
+                            bt_Brew.Enabled = false;
+                            bt_Sell.Enabled = false;
+
+                            bt_NextCustomer.Enabled = true;
+                            img_Solution.Image = null;
+                            img_Ingredient.Image = null;
+                            img_Bottle.Image = null;
+                            img_PotionOutput.Image = null;
+                        }
+                        else
+                        {
+                            money += 750;
+                            sellsound.Play();
+                            tb_Coins.Text = money.ToString();
+                            MessageBox.Show("You sold the correct potion! You gained 750 coins. \r\nHit the \"Next Customer\" button to recieve the next order.");
+                            Display_PotionOutput.Items.Clear();
+
+                            cb_Solution.Enabled = false;
+                            cb_Ingredient.Enabled = false;
+                            cb_Bottle.Enabled = false;
+                            bt_Brew.Enabled = false;
+                            bt_Sell.Enabled = false;
+
+                            bt_NextCustomer.Enabled = true;
+                            img_Solution.Image = null;
+                            img_Ingredient.Image = null;
+                            img_Bottle.Image = null;
+                            img_PotionOutput.Image = null;
+                        }
+                        
+                    }
+                    else
+                    {
+                        chances -= 1;
+                        tb_Chances.Text = chances.ToString();
+                        MessageBox.Show("You sold the incorrect potion! You have " + chances + " chance(s) left.");
+                        Display_PotionOutput.Items.Clear();
+
+                        if(chances == 0)
+                        {
+                            LoseGame();
+                        }
+                    }
+                }
+                else
+                {
+                    chances -= 1;
+                    tb_Chances.Text = chances.ToString();
+                    MessageBox.Show("You sold the incorrect potion! You have " + chances + " chance(s) left.");
+                    Display_PotionOutput.Items.Clear();
+
+                    if (chances == 0)
+                    {
+                        LoseGame();
+                    }
+                }
+            }
+            else
+            {
+                chances -= 1;
+                tb_Chances.Text = chances.ToString();
+                MessageBox.Show("You sold the incorrect potion! You have " + chances + " chance(s) left.");
+                Display_PotionOutput.Items.Clear();
+
+                if (chances == 0)
+                {
+                    LoseGame();
+                }
+            }
+        }
+
+        //method that resets all Combobox items, clears all ListBoxes, and gives an new random customer request. Is only available after selling correct potion.
+        private void bt_NextCustomer_Click(object sender, EventArgs e)
+        {
+            Display_Request.Items.Clear();
+            RandomizeRequest();
+            Display_Request.Items.Add("");
+            Display_Request.Items.Add("");
+            Display_Request.Items.Add(CustomerRequest());
+            cb_Solution.SelectedIndex = -1;
+            cb_Ingredient.SelectedIndex = -1;
+            cb_Bottle.SelectedIndex = -1;
+
+            cb_Solution.Enabled = true;
+            cb_Ingredient.Enabled = true;
+            cb_Bottle.Enabled = true;
+            bt_Brew.Enabled = true;
+            bt_Sell.Enabled = true;
+
+            bt_NextCustomer.Enabled = false;
+        }
+
+        //method that closes the game when the player runs out of lives
+        private void LoseGame()
+        {
+            MessageBox.Show("No more chances left. You lose!");
+            Application.Exit();
+        }
+
+        private void bt_Exit_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+        #endregion
+
+        //methods that control shop items
+        #region Shop Items
+        private void moneyBoostToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if(money >= 3000)
+            {
+                money -= 3000;
+                moneyBoost = true;
+                tb_Coins.Text = money.ToString();
+                moneyBoostsound.Play();
+                MessageBox.Show("You bought a Money Boost! \r\nNow, you will earn 1.5x the money from potion sales!");
+                mnu_TopMenu.Items.Remove(moneyBoostToolStripMenuItem);
+            }
+            else
+            {
+                MessageBox.Show("Insufficient funds. You need at least 1500 coins to buy a Money Boost.");
+            }
+        }
+
+        private void goldenLaboratory5000CoinsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (money >= 5000)
+            {
+                money -= 5000;
+              
+                tb_Coins.Text = money.ToString();
+                goldLab.Play();
+
+                Apoternary.ActiveForm.BackgroundImage = Image.FromFile(Application.StartupPath + "\\Sprites\\GoldBackground.png");
+                img_Title.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\GoldTitle.png");
+                mnu_TopMenu.BackColor = Color.DarkGoldenrod;
+
+                lbl_Solution.BackColor = Color.Goldenrod;
+                lbl_Ingredient.BackColor = Color.Goldenrod;
+                lbl_Bottle.BackColor = Color.Goldenrod;
+                lbl_Chances.BackColor = Color.Goldenrod;
+                lbl_CoinsEarned.BackColor = Color.Goldenrod;
+                lbl_Request.BackColor = Color.Goldenrod;
+
+                bt_Brew.BackColor = Color.Gold;
+                bt_Sell.BackColor = Color.Gold;
+                bt_Exit.BackColor = Color.Gold;
+                tb_Chances.BackColor = Color.Gold;
+                tb_Coins.BackColor = Color.Gold;
+                bt_NextCustomer.BackColor = Color.Gold;
+                Display_PotionOutput.BackColor = Color.Gold;
+                Display_Request.BackColor = Color.Gold;
+
+                MessageBox.Show("You bought the Golden Laboratory! \r\nNow you'll be brewing in style!");
+                mnu_TopMenu.Items.Remove(goldenLaboratory5000CoinsToolStripMenuItem);
+            }
+            else
+            {
+                MessageBox.Show("Insufficient funds. You need at least 5000 coins to buy the Golden Laboratory.");
+            }
+        }
+
+        private void expertApothecaryLicense10000CoinsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (money >= 10000)
+            {
+                money -= 10000;
+                
+                tb_Coins.Text = money.ToString();
+                expertLicense.Play();
+
+                img_License.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\ExpertLicense.png");
+
+                MessageBox.Show("You bought an Expert Apothecary License! \r\nYou've got serious dedication!");
+                mnu_TopMenu.Items.Remove(expertApothecaryLicense10000CoinsToolStripMenuItem);
+            }
+            else
+            {
+                MessageBox.Show("Insufficient funds. You need at least 10000 coins to buy an Expert Apothecary License.");
+            }
+        }
+
+        private void extraChance3000CoinsOneTimePurchaseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (money >= 3000)
+            {
+                money -= 3000;
+                chances++;
+                tb_Coins.Text = money.ToString();
+                tb_Chances.Text = chances.ToString();
+                MessageBox.Show("You bought an extra chance!");
+                mnu_TopMenu.Items.Remove(extraChance3000CoinsOneTimePurchaseToolStripMenuItem);
+
+            }
+            else
+            {
+                MessageBox.Show("Insufficient funds. You need at least 3000 coins to buy an extra chance.");
+            }
+        }
+        #endregion
+
+        //methods that control image display for potion components
+        #region Component Image Control
+        //method that changes the image of the solution based on ComboBox selection
+        private void cb_Solution_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if(cb_Solution.SelectedIndex == 0)
+            {
+                img_Solution.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\CarbonatedWater.png");
+            }
+            else if(cb_Solution.SelectedIndex == 1)
+            {
+                img_Solution.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\BeeHoney.png");
+            }
+            else if (cb_Solution.SelectedIndex == 2)
+            {
+                img_Solution.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\SpiderVenom.png");
+            }
+        }
+
+        //method that changes the image of the ingredient based on ComboBox selection
+        private void cb_Ingredient_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cb_Ingredient.SelectedIndex == 0)
+            {
+                img_Ingredient.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\LeafyClover.png");
+            }
+            else if (cb_Ingredient.SelectedIndex == 1)
+            {
+                img_Ingredient.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\CupidFeather.png");
+            }
+            else if (cb_Ingredient.SelectedIndex == 2)
+            {
+                img_Ingredient.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\DemonTears.png");
+            }
+        }
+
+        //method that changes the image of the bottle based on ComboBox selection
+        private void cb_Bottle_SelectedIndexChanged(object sender, EventArgs e)
+        { 
+            if (cb_Bottle.SelectedIndex == 0)
+            {
+                img_Bottle.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\SmallBottle.png");
+            }
+            else if (cb_Bottle.SelectedIndex == 1)
+            {
+                img_Bottle.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\MediumBottle.png");
+            }
+            else if (cb_Bottle.SelectedIndex == 2)
+            {
+                img_Bottle.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\LargeBottle.png");
+            }
+        }
+        #endregion
+
+        //methods that control image display for output potion
+        #region Potion Image Control
+        //method that displays the brewed potion based on ComboBox Selection
+        private void DisplayPotionOutput()
+        {
+            #region Fizzy Potions
+            //Fizzy
+            if (solutionNum == 0)
+            {
+                //Luck
+                if (ingredientNum == 0)
+                {
+                    //Small
+                    if (bottleNum == 0)
+                    {
+                        //Small Fizzy Potion of Luck
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\SFLPotion.png");
+                    }
+
+                    //Medium
+                    else if (bottleNum == 1)
+                    {
+                        //Medium Fizzy Potion of Luck
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\MFLPotion.png");
+                    }
+
+                    //Large
+                    else if (bottleNum == 2)
+                    {
+                        //Large Fizzy Potion of Luck
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\LFLPotion.png");
+                    }
+                }
+
+                //Love
+                else if (ingredientNum == 1)
+                {
+                    //Small
+                    if (bottleNum == 0)
+                    {
+                        //Small Fizzy Potion of Love
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\SFLovePotion.png");
+                    }
+
+                    //Medium
+                    else if (bottleNum == 1)
+                    {
+                        //Medium Fizzy Potion of Love
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\MFLovePotion.png");
+                    }
+
+                    //Large
+                    else if (bottleNum == 2)
+                    {
+                        //Large Fizzy Potion of Love
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\LFLovePotion.png");
+                    }
+                }
+
+                //Sadness
+                else if (ingredientNum == 2)
+                {
+                    //Small
+                    if (bottleNum == 0)
+                    {
+                        //Small Fizzy Potion of Sadness
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\SFSPotion.png");
+                    }
+
+                    //Medium
+                    else if (bottleNum == 1)
+                    {
+                        //Medium Fizzy Potion of Sadness
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\MFSPotion.png");
+                    }
+
+                    //Large
+                    else if (bottleNum == 2)
+                    {
+                        //Large Fizzy Potion of Sadness
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\LFSPotion.png");
+                    }
+                }
+            }
+            #endregion
+
+            #region Sweet Potions
+            //Sweet
+            else if (solutionNum == 1)
+            {
+                //Luck
+                if (ingredientNum == 0)
+                {
+                    //Small
+                    if (bottleNum == 0)
+                    {
+                        //Small Sweet Potion of Luck
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\SSLPotion.png");
+                    }
+
+                    //Medium
+                    else if (bottleNum == 1)
+                    {
+                        //Medium Sweet Potion of Luck
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\MSLPotion.png");
+                    }
+
+                    //Large
+                    else if (bottleNum == 2)
+                    {
+                        //Large Sweet Potion of Luck
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\LSLPotion.png");
+                    }
+                }
+
+                //Love
+                else if (ingredientNum == 1)
+                {
+                    //Small
+                    if (bottleNum == 0)
+                    {
+                        //Small Sweet Potion of Love
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\SSLovePotion.png");
+                    }
+
+                    //Medium
+                    else if (bottleNum == 1)
+                    {
+                        //Medium Sweet Potion of Love
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\MSLovePotion.png");
+                    }
+
+                    //Large
+                    else if (bottleNum == 2)
+                    {
+                        //Large Sweet Potion of Love
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\LSLovePotion.png");
+                    }
+                }
+
+                //Sadness
+                else if (ingredientNum == 2)
+                {
+                    //Small
+                    if (bottleNum == 0)
+                    {
+                        //Small Sweet Potion of Sadness
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\SSSPotion.png");
+                    }
+
+                    //Medium
+                    else if (bottleNum == 1)
+                    {
+                        //Medium Sweet Potion of Sadness
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\MSSPotion.png");
+                    }
+
+                    //Large
+                    else if (bottleNum == 2)
+                    {
+                        //Large Sweet Potion of Sadness
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\LSSPotion.png");
+                    }
+                }
+            }
+            #endregion
+
+            #region Toxic Potions
+            //Toxic
+            else if (solutionNum == 2)
+            {
+                //Luck
+                if (ingredientNum == 0)
+                {
+                    //Small
+                    if (bottleNum == 0)
+                    {
+                        //Small Toxic Potion of Luck
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\STLPotion.png");
+                    }
+
+                    //Medium
+                    else if (bottleNum == 1)
+                    {
+                        //Medium Toxic Potion of Luck
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\MTLPotion.png");
+                    }
+
+                    //Large
+                    else if (bottleNum == 2)
+                    {
+                        //Large Toxic Potion of Luck
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\LTLPotion.png");
+                    }
+                }
+
+                //Love
+                else if (ingredientNum == 1)
+                {
+                    //Small
+                    if (bottleNum == 0)
+                    {
+                        //Small Toxic Potion of Love
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\STLovePotion.png");
+                    }
+
+                    //Medium
+                    else if (bottleNum == 1)
+                    {
+                        //Medium Toxic Potion of Love
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\MTLovePotion.png");
+                    }
+
+                    //Large
+                    else if (bottleNum == 2)
+                    {
+                        //Large Toxic Potion of Love
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\LTLovePotion.png");
+                    }
+                }
+
+                //Sadness
+                else if (ingredientNum == 2)
+                {
+                    //Small
+                    if (bottleNum == 0)
+                    {
+                        //Small Toxic Potion of Sadness
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\STSPotion.png");
+                    }
+
+                    //Medium
+                    else if (bottleNum == 1)
+                    {
+                        //Medium Toxic Potion of Sadness
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\MTSPotion.png");
+                    }
+
+                    //Large
+                    else if (bottleNum == 2)
+                    {
+                        //Large Toxic Potion of Sadness
+                        img_PotionOutput.Image = Image.FromFile(Application.StartupPath + "\\Sprites\\LTSPotion.png");
+                    }
+                }
+            }
+            #endregion
+        }
+        #endregion
+
+        //method that displays the game credits
+        private void creditsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("> \"Apoternary\" v.1.0 created by Jagger Walraven.\r\n> Sounds are from Minecraft, Terraria, or are License Free.\r\n> All graphics besides the background are mine.");
+        }
+    }
+}
